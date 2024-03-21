@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
+
 // Countries and their coordinates
 const countries = [
     { name: 'Netherlands', lat: 52.3667, lon: 4.8945 },
@@ -19,9 +20,11 @@ const countries = [
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
-const labelRenderer = new CSS2DRenderer();
+
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize(window.innerWidth, window.innerHeight);
 labelRenderer.domElement.style.position = 'absolute';
 labelRenderer.domElement.style.top = 0;
@@ -48,7 +51,7 @@ scene.add(light);
 
 // Add pinpoint markers for each country
 countries.forEach(country => {
-    const markerGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const markerGeometry = new THREE.SphereGeometry(0.05, 32, 32);
     const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const marker = new THREE.Mesh(markerGeometry, markerMaterial, country.name);
     const countryName = country.name;
@@ -59,54 +62,30 @@ countries.forEach(country => {
 
     marker.position.setFromSphericalCoords(5, phi, theta);
     earth.add(marker);
+    displayCountryName(countryName, marker);
     
 });
 
-// Set up raycaster for mouse hover detection
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-document.addEventListener('mousemove', onMouseMove, false);
 
-function onMouseMove(event) {
-    // Calculate normalized device coordinates
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    // Update the picking ray with the camera and mouse position
-    raycaster.setFromCamera(mouse, camera);
-
-    // Calculate objects intersecting the picking ray
-    const intersects = raycaster.intersectObjects(earth.children);
-
-    clearCountryName();
-
-    if (intersects.length > 0) {
-        const marker = intersects[0].object;
-        displayCountryName(marker.name);
-    }
-}   
-function clearCountryName() {
-    const countryNameElement = document.querySelector('div');
-    if (countryNameElement) {
-        document.body.removeChild(countryNameElement);
-    }
+function displayCountryName(countryName, marker) {
+    const labelDiv = document.createElement('div');
+    labelDiv.className = 'label';
+    labelDiv.textContent = countryName;
+    labelDiv.style.marginTop = '-1em';
+    labelDiv.style.backgroundColor = 'rgba(0,0,0,0.5)'; 
+    labelDiv.style.color = 'white';
+    labelDiv.style.fontFamily = 'Arial';
+    const labelObject = new CSS2DObject(labelDiv);
+    labelObject.position.set(marker.position.x, marker.position.y, marker.position.z);
+    labelObject.name = countryName;
+    earth.add(labelObject);
 }
-
-function displayCountryName(name) {
-    const countryNameElement = document.createElement('div');
-    countryNameElement.className = 'label';
-    countryNameElement.textContent = name;
-    countryNameElement.style.color = 'white';
-    countryNameElement.style.position = 'absolute';
-    const label = new CSS2DObject(countryNameElement);
-    label.position.set(3, 0, 0);
-    marker.add(label);
-}
-
 
 
 // Set camera position and look at the Earth
-camera.position.z = 15;
+camera.position.z = 10;
+camera.position.y = 10;
+camera.position.x = 0;
 camera.lookAt(earth.position);
 // Animation loop
 function animate() {
@@ -114,7 +93,6 @@ function animate() {
 
     // Rotate the Earth
     earth.rotation.y += 0.01;
-
     renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
 }
